@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b1446"/>
+      <stop offset=".6" stop-color="#4b2a7a"/>
+      <stop offset="1" stop-color="#d86aa8"/>
+    </linearGradient>
+    <radialGradient id="moonglow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#fff6d8" stop-opacity=".9"/>
+      <stop offset=".4" stop-color="#ffe8f4" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#ffe8f4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6b6d8"/>
+      <stop offset="1" stop-color="#b57be0"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf3fb"/>
+      <stop offset="1" stop-color="#c9b6ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <circle cx="800" cy="250" r="260" fill="url(#moonglow)"/>
+  <circle cx="800" cy="250" r="110" fill="#fff4d6"/>
+  <circle cx="770" cy="225" r="18" fill="#f1dfb4" opacity=".6"/>
+  <circle cx="835" cy="285" r="26" fill="#f1dfb4" opacity=".5"/>
+  <g fill="#fff" opacity=".9">
+    <circle cx="120" cy="90" r="2.4"/><circle cx="260" cy="190" r="1.8"/><circle cx="380" cy="70" r="2.8"/>
+    <circle cx="520" cy="150" r="1.6"/><circle cx="610" cy="60" r="2.2"/><circle cx="1010" cy="110" r="2.6"/>
+    <circle cx="1120" cy="220" r="1.8"/><circle cx="960" cy="330" r="1.6"/><circle cx="70" cy="300" r="2"/>
+    <circle cx="450" cy="300" r="1.5"/><circle cx="1090" cy="60" r="2"/><circle cx="190" cy="420" r="1.7"/>
+  </g>
+  <path d="M0 650 Q200 600 380 650 T760 640 T1200 620 V800 H0Z" fill="#2a1a52" opacity=".85"/>
+  <path d="M0 720 Q260 670 520 722 T1200 700 V800 H0Z" fill="#170f36"/>
+
+  <!-- 少女(後ろ姿ぎみの横顔、月を見上げる) -->
+  <g transform="translate(560 190)">
+    <!-- 後ろ髪 -->
+    <path d="M150 40 C40 40 10 190 40 330 C55 410 40 470 20 520 C120 540 250 520 310 470 C300 380 330 300 320 200 C310 90 240 40 150 40Z" fill="url(#hair)"/>
+    <!-- 体 -->
+    <path d="M120 360 C80 400 60 500 40 610 L330 610 C310 500 290 400 250 360Z" fill="url(#dress)"/>
+    <path d="M150 360 L185 430 L225 360Z" fill="#e87bb4"/>
+    <!-- 首 -->
+    <path d="M155 310 L155 370 Q187 392 220 370 L220 310Z" fill="#ffe3d6"/>
+    <!-- 顔 -->
+    <ellipse cx="190" cy="215" rx="98" ry="112" fill="#ffe9de"/>
+    <!-- 前髪 -->
+    <path d="M86 205 C84 100 150 62 200 66 C262 70 296 130 290 205 C270 150 235 130 205 120 C190 160 130 170 86 205Z" fill="url(#hair)"/>
+    <path d="M110 170 C115 130 140 105 170 96" stroke="#fff" stroke-opacity=".55" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- 横髪 -->
+    <path d="M86 205 C80 270 96 330 84 390 C120 340 126 270 120 205Z" fill="url(#hair)"/>
+    <path d="M292 205 C300 270 284 330 296 390 C262 340 256 270 262 205Z" fill="url(#hair)"/>
+    <!-- 目 -->
+    <g>
+      <ellipse cx="148" cy="228" rx="21" ry="29" fill="#3a2370"/>
+      <ellipse cx="148" cy="232" rx="15" ry="22" fill="#7d63e0"/>
+      <ellipse cx="148" cy="238" rx="9" ry="12" fill="#d7ccff"/>
+      <circle cx="140" cy="218" r="7" fill="#fff"/><circle cx="156" cy="244" r="3.5" fill="#fff"/>
+      <path d="M122 212 Q146 192 172 210" stroke="#3a2370" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="232" cy="228" rx="21" ry="29" fill="#3a2370"/>
+      <ellipse cx="232" cy="232" rx="15" ry="22" fill="#7d63e0"/>
+      <ellipse cx="232" cy="238" rx="9" ry="12" fill="#d7ccff"/>
+      <circle cx="224" cy="218" r="7" fill="#fff"/><circle cx="240" cy="244" r="3.5" fill="#fff"/>
+      <path d="M208 210 Q234 192 258 212" stroke="#3a2370" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </g>
+    <ellipse cx="124" cy="274" rx="16" ry="8" fill="#ff9fb8" opacity=".5"/>
+    <ellipse cx="256" cy="274" rx="16" ry="8" fill="#ff9fb8" opacity=".5"/>
+    <path d="M174 292 Q190 304 206 292" stroke="#c4566e" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- リボン -->
+    <path d="M255 82 L305 50 L300 108Z M255 82 L215 40 L228 100Z" fill="#fff" stroke="#e87bb4" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="256" cy="80" r="10" fill="#e87bb4"/>
+  </g>
+  <!-- 舞う花びら -->
+  <g fill="#ffd1e6" opacity=".85">
+    <ellipse cx="300" cy="380" rx="9" ry="5" transform="rotate(30 300 380)"/>
+    <ellipse cx="420" cy="520" rx="8" ry="4.5" transform="rotate(-20 420 520)"/>
+    <ellipse cx="980" cy="470" rx="9" ry="5" transform="rotate(50 980 470)"/>
+    <ellipse cx="1060" cy="600" rx="8" ry="4.5" transform="rotate(10 1060 600)"/>
+    <ellipse cx="220" cy="600" rx="7" ry="4" transform="rotate(70 220 600)"/>
+  </g>
+</svg>

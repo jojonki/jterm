@@ -6,6 +6,7 @@ A simple, focused SSH client for Windows and macOS.
 - One tab per connection, freely split left/right or top/bottom inside a tab
 - Reconnect a disconnected pane with the R key (or the "Reconnect" button)
 - Copy on select, paste on right click
+- Per-session look: color theme, accent/background color and a background image (session editor → "Appearance for this session")
 
 ## Shortcuts
 
@@ -17,6 +18,8 @@ A simple, focused SSH client for Windows and macOS.
 | Split top/bottom | Ctrl+Shift+E | ⌘E |
 | Search sessions | Ctrl+Shift+K | ⌘K |
 | Toggle sidebar | Ctrl+Shift+B | ⌘B |
+| Appearance settings | Ctrl+Shift+, | ⌘, |
+| Shortcut help & about | Ctrl+Shift+/ | ⌘/ |
 | Move between panes | Ctrl+Shift+Arrow | ⌘+Arrow |
 | Switch tab | Ctrl+Tab / Ctrl+Shift+1–9 | Ctrl+Tab / ⌘1–9 |
 | Copy / Paste | Ctrl+Shift+C / V | ⌘C / ⌘V |
@@ -63,3 +66,7 @@ wails build -platform darwin/universal
 Artifacts are written to `build/bin/`. During development, `wails dev` hot-reloads your changes.
 
 The Windows build needs the WebView2 runtime, which is preinstalled on Windows 10/11.
+
+## Appearance
+
+The ⚙ button (or ⌘,) opens the appearance settings: color theme, accent color, background color and background opacity. The ? button (or ⌘/) shows the shortcut list and links to the project and to [sponsor jojonki](https://github.com/sponsors/jojonki). Settings are stored locally.

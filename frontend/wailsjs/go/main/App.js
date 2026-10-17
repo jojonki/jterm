@@ -42,6 +42,14 @@ export function ListSessions() {
   return window['go']['main']['App']['ListSessions']();
 }
 
+export function LoadImage(arg1) {
+  return window['go']['main']['App']['LoadImage'](arg1);
+}
+
+export function PickImage() {
+  return window['go']['main']['App']['PickImage']();
+}
+
 export function PickKeyFile() {
   return window['go']['main']['App']['PickKeyFile']();
 }

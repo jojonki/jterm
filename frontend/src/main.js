@@ -4,6 +4,10 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import {
+  applyAppearance, applyLook, xtermTheme, onAppearanceChange,
+} from './appearance.js';
+import { initSettings } from './settings-ui.js';
 import * as Backend from '../wailsjs/go/main/App';
 import {
   EventsOn, ClipboardGetText, ClipboardSetText, BrowserOpenURL,
@@ -184,7 +188,14 @@ async function reloadSessions() {
   const list = await Backend.ListSessions();
   sessions = list.sort((a, b) => a.name.localeCompare(b.name, 'ja', { numeric: true }));
   sidebarList.render();
-  for (const tab of tabs) for (const p of tab.panes()) p.picker?.render();
+  for (const tab of tabs) {
+    for (const p of tab.panes()) {
+      p.picker?.render();
+      // 編集された見た目を、開いているペインにも反映する
+      const latest = p.session && sessions.find((x) => x.id === p.session.id);
+      if (latest) { p.session = latest; p.applyLook(); p.update(); }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -213,7 +224,8 @@ class Pane {
       h('button', { text: '×', title: 'Close pane', onclick: () => closePane(this) }));
     this.body = h('div', { class: 'term-host' });
     this.bar = null;
-    this.el = h('div', { class: 'pane' }, this.header, this.body);
+    this.bgEl = h('div', { class: 'pane-bg' });
+    this.el = h('div', { class: 'pane' }, this.bgEl, this.header, this.body);
     this.el.addEventListener('mousedown', () => setActivePane(this, false));
     this.el.addEventListener('focusin', () => setActivePane(this, false));
   }
@@ -253,7 +265,8 @@ class Pane {
       macOptionIsMeta: true,
       cursorStyle: 'block',
       cursorInactiveStyle: 'outline',
-      theme: { background: '#1e1e1e', cursor: '#ffffff', cursorAccent: '#1e1e1e' },
+      allowTransparency: true,
+      theme: xtermTheme(this.session?.look),
     });
     this.fit = new FitAddon();
     term.loadAddon(this.fit);
@@ -297,9 +310,18 @@ class Pane {
     });
   }
 
+  // 接続先ごとの色・背景画像を反映する(画像の読み込みは非同期なので、新しい適用を優先する)
+  applyLook() {
+    const look = this.session?.look;
+    const seq = (this.lookSeq = (this.lookSeq ?? 0) + 1);
+    if (this.term) this.term.options.theme = xtermTheme(look);
+    return applyLook(this.el, look, () => seq === this.lookSeq);
+  }
+
   connect(session) {
     this.session = session;
     this.picker = null;
+    this.applyLook();
     this.ensureTerm();
     this.body.replaceChildren(this.termEl);
     if (!this.term.element) this.term.open(this.termEl);
@@ -332,6 +354,7 @@ class Pane {
       return;
     }
     this.session = latest;
+    this.applyLook();
     this.term.write('\r\n');
     this.start();
   }
@@ -750,6 +773,7 @@ function editSession(session) {
           port: Number(form.port.value) || 22,
           user: form.user.value,
           keyFile: form.keyFile.value,
+          look: session?.look ?? null, // 見た目は設定画面で編集する
           password: form.password.value,
           clearPassword: form.clearPassword.checked,
           hasPassword: false,
@@ -885,6 +909,8 @@ const shortcuts = [
   ['KeyE', 'Split down', () => activePane() && splitPane(activePane(), 'v')],
   ['KeyK', 'Search sessions', () => focusSearch()],
   ['KeyB', 'Toggle sidebar', () => toggleSidebar()],
+  ['Comma', 'Appearance settings', () => ui.showSettings()],
+  ['Slash', 'Shortcut help & about', () => ui.showHelp()],
   ['KeyC', 'Copy', () => activePane()?.copy()],
   ['KeyV', 'Paste', () => activePane()?.paste()],
   ['ArrowLeft', 'Focus left pane', () => focusDirection(-1, 0)],
@@ -893,10 +919,18 @@ const shortcuts = [
   ['ArrowDown', 'Focus lower pane', () => focusDirection(0, 1)],
 ];
 
+const KEY_LABELS = { Comma: ',', Slash: '/' };
+
 function isMod(e) {
   // Windows では端末のキー(Ctrl+C 等)とぶつからないよう Ctrl+Shift を使う
   if (isMac) return e.metaKey && !e.ctrlKey;
   return e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey;
+}
+
+// macOS で ⌘, が WebView に届かない環境向けに、⌥, / ⌥/ でも開けるようにする
+// (そのままだと検索欄に ≤ や ÷ が入力されてしまう)
+function isMacOptionAlias(e) {
+  return isMac && e.altKey && !e.metaKey && !e.ctrlKey && (e.code === 'Comma' || e.code === 'Slash');
 }
 
 function cycleTab(delta) {
@@ -904,6 +938,25 @@ function cycleTab(delta) {
   const i = tabs.indexOf(currentTab);
   activateTab(tabs[(i + delta + tabs.length) % tabs.length]);
 }
+
+const ui = initSettings({
+  shortcutRows,
+  // 設定画面の「このセッション」の対象は、アクティブなペインの接続先
+  activeSession: () => {
+    const s = activePane()?.session;
+    return s ? sessions.find((x) => x.id === s.id) ?? null : null;
+  },
+  async saveLook(session, look) {
+    await Backend.SaveSession({
+      ...session, look, password: '', clearPassword: false, lastUsed: 0,
+    });
+    await reloadSessions();
+  },
+});
+
+onAppearanceChange(() => {
+  for (const t of tabs) for (const p of t.panes()) p.applyLook();
+});
 
 // キャプチャ段階で処理して、xterm にキーが渡らないようにする
 document.addEventListener('keydown', (e) => {
@@ -914,7 +967,7 @@ document.addEventListener('keydown', (e) => {
   let action = null;
   if (e.ctrlKey && e.code === 'Tab') {
     action = () => cycleTab(e.shiftKey ? -1 : 1);
-  } else if (isMod(e)) {
+  } else if (isMod(e) || isMacOptionAlias(e)) {
     const sc = shortcuts.find(([code]) => code === e.code);
     if (sc) action = sc[2];
     const m = /^Digit([1-9])$/.exec(e.code);
@@ -939,15 +992,19 @@ function toggleSidebar() {
   for (const t of tabs) for (const p of t.panes()) p.refit();
 }
 
-function renderShortcutHelp() {
-  const rows = [
+function shortcutRows() {
+  return [
     ['Double-click a session', 'Connect in a new tab'],
     ['Right-click a session', 'Open in split / edit / delete'],
-    ...shortcuts.filter(([code]) => !code.startsWith('Arrow')).map(([code, label]) => [`${MOD_LABEL}${code.slice(3)}`, label]),
+    ...shortcuts.filter(([code]) => !code.startsWith('Arrow')).map(([code, label]) => [`${MOD_LABEL}${KEY_LABELS[code] ?? code.slice(3)}`, label]),
     [`${MOD_LABEL}←↑↓→`, 'Move between panes'],
     ['Ctrl+Tab', 'Next tab'],
     ['Select text / right-click in terminal', 'Copy / paste'],
   ];
+}
+
+function renderShortcutHelp() {
+  const rows = shortcutRows();
   $('#shortcut-help').replaceChildren(...rows.map(([k, v]) => h('tr', {}, h('td', {}, h('kbd', { text: k })), h('td', { text: v }))));
 }
 
@@ -965,6 +1022,10 @@ EventsOn('ssh:prompt', async (ev) => {
 });
 
 EventsOn('ssh:prompt-cancel', (id) => cancelAsk(id));
+
+EventsOn('menu:appearance', () => ui.showSettings());
+EventsOn('menu:shortcuts', () => ui.showHelp());
+EventsOn('menu:about', () => ui.showAbout());
 
 EventsOn('sessions:changed', () => reloadSessions());
 
@@ -991,8 +1052,6 @@ $('#btn-import-ssh').addEventListener('click', async () => {
   setTimeout(() => { status.hidden = true; }, 8000);
 });
 $('#btn-new-tab').addEventListener('click', () => newTab());
-$('#btn-split-h').addEventListener('click', () => activePane() && splitPane(activePane(), 'h'));
-$('#btn-split-v').addEventListener('click', () => activePane() && splitPane(activePane(), 'v'));
 $('#btn-toggle-sidebar').addEventListener('click', () => toggleSidebar());
 $('#tabbar').addEventListener('dblclick', (e) => {
   if (e.target === e.currentTarget || e.target.id === 'tabs') newTab();
@@ -1003,6 +1062,7 @@ document.addEventListener('contextmenu', (e) => {
 });
 
 async function init() {
+  applyAppearance();
   renderShortcutHelp();
   renderTabBar();
   // 画面の再読み込み時に、前の画面の接続が残らないようにする

@@ -27,6 +27,7 @@ type SessionInfo struct {
 	KeyFile     string `json:"keyFile"`
 	HasPassword bool   `json:"hasPassword"`
 	LastUsed    int64  `json:"lastUsed"` // UNIX ミリ秒。未使用なら 0
+	Look        *Look  `json:"look"`
 
 	// 保存時のみ使う入力用フィールド
 	Password      string `json:"password"`      // 空なら変更しない
@@ -36,7 +37,7 @@ type SessionInfo struct {
 func toInfo(s *Session) SessionInfo {
 	info := SessionInfo{
 		ID: s.ID, Name: s.Name, Host: s.Host, Port: s.Port, User: s.User,
-		KeyFile: s.KeyFile, HasPassword: s.HasPassword,
+		KeyFile: s.KeyFile, HasPassword: s.HasPassword, Look: s.Look,
 	}
 	if !s.LastUsed.IsZero() {
 		info.LastUsed = s.LastUsed.UnixMilli()
@@ -146,6 +147,11 @@ func (a *App) SaveSession(in SessionInfo) (SessionInfo, error) {
 		a.store.Sessions = append(a.store.Sessions, s)
 	}
 	s.Name, s.Host, s.Port, s.User, s.KeyFile = in.Name, in.Host, in.Port, in.User, in.KeyFile
+	if in.Look.empty() {
+		s.Look = nil
+	} else {
+		s.Look = in.Look
+	}
 	switch {
 	case in.Password != "":
 		if err := setSecret(s.ID, in.Password); err != nil {
@@ -228,6 +234,40 @@ func (a *App) PickKeyFile() (string, error) {
 		}
 	}
 	return runtime.OpenFileDialog(a.ctx, opts)
+}
+
+// PickImage は背景画像を選ぶダイアログを開く。キャンセルなら空文字を返す。
+func (a *App) PickImage() (string, error) {
+	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select background image",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Images", Pattern: "*.png;*.jpg;*.jpeg;*.gif;*.webp;*.svg"},
+		},
+	})
+}
+
+// LoadImage は画像ファイルを data URL にして返す(WebView からローカルファイルを直接読めないため)。
+func (a *App) LoadImage(path string) (string, error) {
+	const maxSize = 20 << 20
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	if info.Size() > maxSize {
+		return "", errors.New("Image is too large (max 20MB)")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	mime := map[string]string{
+		".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+		".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
+	}[strings.ToLower(filepath.Ext(path))]
+	if mime == "" {
+		return "", errors.New("Unsupported image type")
+	}
+	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(data), nil
 }
 
 // notifySessions は a.mu を保持した状態で呼ぶ。

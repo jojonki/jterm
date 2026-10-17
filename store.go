@@ -11,6 +11,17 @@ import (
 	"time"
 )
 
+// Look は接続先ごとの見た目。空の項目はアプリ全体の外観設定を使う。
+type Look struct {
+	Theme        string `json:"theme,omitempty"`
+	Accent       string `json:"accent,omitempty"`
+	Background   string `json:"background,omitempty"`
+	Image        string `json:"image,omitempty"`        // "preset:<id>" または画像ファイルのパス
+	ImageOpacity int    `json:"imageOpacity,omitempty"` // 背景画像の濃さ(%)。0 なら既定値
+}
+
+func (l *Look) empty() bool { return l == nil || *l == Look{} }
+
 // Session は保存された接続先。
 type Session struct {
 	ID          string    `json:"id"`
@@ -21,6 +32,7 @@ type Session struct {
 	KeyFile     string    `json:"keyFile,omitempty"`
 	HasPassword bool      `json:"hasPassword,omitempty"` // パスワード本体は secrets.go で OS に保存
 	LastUsed    time.Time `json:"lastUsed,omitempty"`
+	Look        *Look     `json:"look,omitempty"`
 }
 
 type Store struct {
