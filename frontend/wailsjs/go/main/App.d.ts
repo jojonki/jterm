@@ -16,7 +16,7 @@ export function ForgetPassphrase(arg1:string):Promise<void>;
 
 export function ForgetPassword(arg1:string):Promise<void>;
 
-export function ImportSSHConfig():Promise<main.ImportResult>;
+export function ImportSSHConfig(arg1:string):Promise<main.ImportResult>;
 
 export function ListKeyFiles():Promise<Array<string>>;
 
@@ -27,6 +27,8 @@ export function LoadImage(arg1:string):Promise<string>;
 export function PickImage():Promise<string>;
 
 export function PickKeyFile():Promise<string>;
+
+export function PickSSHConfig():Promise<string>;
 
 export function Resize(arg1:string,arg2:number,arg3:number):Promise<void>;
 

@@ -1,6 +1,6 @@
 // 外観設定ダイアログとヘルプ(ショートカット一覧・スポンサーリンク)ダイアログ。
 import { BrowserOpenURL } from '../wailsjs/runtime/runtime';
-import { PickImage } from '../wailsjs/go/main/App';
+import { PickImage, PickSSHConfig, ImportSSHConfig } from '../wailsjs/go/main/App';
 import {
   THEMES, ACCENT_PRESETS, OPACITY_RANGE, LINKS, PRESET_IMAGES, DEFAULT_IMAGE_OPACITY,
   getSettings, getTheme, update, reset, currentColors, onAppearanceChange,
@@ -50,6 +50,7 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
   const tabsNav = $('#ad-tabs');
   const TABS = [
     ['appearance', 'Appearance'],
+    ['sshconfig', 'SSH Config'],
     ['shortcuts', 'Shortcuts'],
     ['about', 'About'],
   ];
@@ -195,6 +196,53 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
     body.append(el('div', 'hint', 'Opacity needs a compositor that supports window transparency (macOS, Windows 11). Background images are set per session: switch to the Session tab.'));
   }
 
+  function renderSSHConfig() {
+    body.replaceChildren();
+    const KEY = 'jterm.sshConfigPath';
+    let path = '';
+    try { path = localStorage.getItem(KEY) || ''; } catch { /* 保存できなくても動く */ }
+
+    const input = el('input', 'grow');
+    input.type = 'text';
+    input.readOnly = true;
+    input.placeholder = 'No file selected';
+    input.value = path;
+    const browse = el('button', null, 'Browse…');
+    browse.type = 'button';
+    const importBtn = el('button', null, 'Import');
+    importBtn.type = 'button';
+    importBtn.disabled = !path;
+    const status = el('div', 'hint');
+
+    browse.addEventListener('click', async () => {
+      const picked = await PickSSHConfig();
+      if (!picked) return;
+      path = picked;
+      input.value = path;
+      importBtn.disabled = false;
+      status.textContent = '';
+      try { localStorage.setItem(KEY, path); } catch { /* 同上 */ }
+    });
+    importBtn.addEventListener('click', async () => {
+      try {
+        const r = await ImportSSHConfig(path);
+        let text = `Imported ${r.added}, skipped ${r.skipped} existing.`;
+        if (r.unsupported) text += ` ${r.unsupported} use ProxyJump/ProxyCommand, which is not supported yet.`;
+        status.textContent = text;
+      } catch (e) {
+        status.textContent = `Import failed: ${e}`;
+      }
+    });
+
+    const row = el('div', 'color-row');
+    row.append(input, browse, importBtn);
+    body.append(
+      field('ssh config file', row),
+      el('div', 'hint', 'Choose your ssh_config file (usually ~/.ssh/config, but the location depends on your environment), then import its Host entries as sessions.'),
+      status,
+    );
+  }
+
   function renderShortcuts() {
     const hb = body;
     hb.replaceChildren();
@@ -241,7 +289,7 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
       b.addEventListener('click', () => show(id));
       return b;
     }));
-    ({ appearance: renderSettings, shortcuts: renderShortcuts, about: renderAbout })[current]();
+    ({ appearance: renderSettings, sshconfig: renderSSHConfig, shortcuts: renderShortcuts, about: renderAbout })[current]();
     const resetBtn = $('#ad-reset');
     resetBtn.hidden = current !== 'appearance';
     resetBtn.textContent = scope === 'session' && activeSession() ? 'Reset this session' : 'Reset Global appearance';

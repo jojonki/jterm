@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"path"
 	"path/filepath"
@@ -23,13 +24,12 @@ type ImportResult struct {
 	Unsupported int `json:"unsupported"` // ProxyJump / ProxyCommand が指定されているもの(接続はできない可能性がある)
 }
 
-// ImportSSHConfig は ~/.ssh/config の Host エイリアスをセッションとして取り込む。
-func (a *App) ImportSSHConfig() (ImportResult, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ImportResult{}, err
+// ImportSSHConfig は指定した ssh_config ファイルの Host エイリアスをセッションとして取り込む。
+func (a *App) ImportSSHConfig(configPath string) (ImportResult, error) {
+	if configPath == "" {
+		return ImportResult{}, errors.New("no ssh config file selected")
 	}
-	blocks, err := parseSSHConfig(filepath.Join(home, ".ssh", "config"), 0)
+	blocks, err := parseSSHConfig(configPath, 0)
 	if err != nil {
 		return ImportResult{}, err
 	}

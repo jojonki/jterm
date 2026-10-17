@@ -236,6 +236,18 @@ func (a *App) PickKeyFile() (string, error) {
 	return runtime.OpenFileDialog(a.ctx, opts)
 }
 
+// PickSSHConfig は取り込む ssh_config ファイルを選ぶダイアログを開く。キャンセルなら空文字を返す。
+func (a *App) PickSSHConfig() (string, error) {
+	opts := runtime.OpenDialogOptions{Title: "Select ssh config file", ShowHiddenFiles: true}
+	if home, err := os.UserHomeDir(); err == nil {
+		dir := filepath.Join(home, ".ssh")
+		if fi, err := os.Stat(dir); err == nil && fi.IsDir() {
+			opts.DefaultDirectory = dir
+		}
+	}
+	return runtime.OpenFileDialog(a.ctx, opts)
+}
+
 // PickImage は背景画像を選ぶダイアログを開く。キャンセルなら空文字を返す。
 func (a *App) PickImage() (string, error) {
 	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{

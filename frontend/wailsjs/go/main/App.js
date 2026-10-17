@@ -30,8 +30,8 @@ export function ForgetPassword(arg1) {
   return window['go']['main']['App']['ForgetPassword'](arg1);
 }
 
-export function ImportSSHConfig() {
-  return window['go']['main']['App']['ImportSSHConfig']();
+export function ImportSSHConfig(arg1) {
+  return window['go']['main']['App']['ImportSSHConfig'](arg1);
 }
 
 export function ListKeyFiles() {
@@ -52,6 +52,10 @@ export function PickImage() {
 
 export function PickKeyFile() {
   return window['go']['main']['App']['PickKeyFile']();
+}
+
+export function PickSSHConfig() {
+  return window['go']['main']['App']['PickSSHConfig']();
 }
 
 export function Resize(arg1, arg2, arg3) {

@@ -1047,20 +1047,6 @@ sidebarList = new SessionList($('#search'), $('#session-list'), {
 });
 
 $('#btn-new-session').addEventListener('click', () => newSessionInto(activePane()?.state === 'empty' ? activePane() : null));
-$('#btn-import-ssh').addEventListener('click', async () => {
-  const status = $('#import-status');
-  let text;
-  try {
-    const r = await Backend.ImportSSHConfig();
-    text = `Imported ${r.added}, skipped ${r.skipped} existing.`;
-    if (r.unsupported) text += ` ${r.unsupported} use ProxyJump/ProxyCommand, which is not supported yet.`;
-  } catch (e) {
-    text = `Import failed: ${e}`;
-  }
-  status.textContent = text;
-  status.hidden = false;
-  setTimeout(() => { status.hidden = true; }, 8000);
-});
 $('#btn-new-tab').addEventListener('click', () => newTab());
 $('#btn-toggle-sidebar').addEventListener('click', () => toggleSidebar());
 $('#tabbar').addEventListener('dblclick', (e) => {
