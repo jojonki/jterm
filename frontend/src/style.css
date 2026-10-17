@@ -337,6 +337,7 @@ dialog > .buttons .grow { flex: 1; }
 .shortcut-table { border-spacing: 12px 4px; }
 .shortcut-table td:first-child { text-align: right; white-space: nowrap; }
 .about { display: flex; flex-direction: column; gap: 6px; }
+.about-update { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 .about-links { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 button.sponsor .heart, .about-links .sponsor { color: #e5538c; }
 

@@ -1036,6 +1036,7 @@ EventsOn('ssh:prompt-cancel', (id) => cancelAsk(id));
 EventsOn('menu:appearance', () => ui.showSettings());
 EventsOn('menu:shortcuts', () => ui.showHelp());
 EventsOn('menu:about', () => ui.showAbout());
+EventsOn('menu:update', () => ui.showUpdate());
 
 EventsOn('sessions:changed', () => reloadSessions());
 
@@ -1065,6 +1066,24 @@ async function init() {
   await Backend.DisconnectAll();
   await reloadSessions();
   $('#search').focus();
+  setTimeout(checkUpdateQuietly, 5000);
+}
+
+// 起動時の更新確認。新しい版があるときだけ尋ね、失敗や最新のときは何も出さない。
+async function checkUpdateQuietly() {
+  try {
+    const info = await Backend.CheckForUpdate();
+    if (!info.available) return;
+    const r = await ask({
+      kind: 'confirm',
+      title: 'Update available',
+      message: `jterm v${info.latest} is available (you have v${info.current}).`,
+      okLabel: 'View',
+    });
+    if (r.ok) ui.showUpdate();
+  } catch {
+    /* オフラインなどは黙って無視する */
+  }
 }
 
 init();

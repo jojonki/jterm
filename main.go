@@ -44,6 +44,7 @@ func main() {
 	settingsMenu.AddText("Keyboard Shortcuts", acc("/"), emit("menu:shortcuts"))
 	helpMenu := appMenu.AddSubmenu("Help")
 	helpMenu.AddText("About jterm", nil, emit("menu:about"))
+	helpMenu.AddText("Check for Updates…", nil, emit("menu:update"))
 	helpMenu.AddText("Sponsor jojonki ♥", nil, func(_ *menu.CallbackData) {
 		wruntime.BrowserOpenURL(app.ctx, "https://github.com/sponsors/jojonki")
 	})

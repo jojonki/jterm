@@ -86,6 +86,28 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class UpdateInfo {
+	    available: boolean;
+	    current: string;
+	    latest: string;
+	    notes: string;
+	    pageUrl: string;
+	    assetName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.current = source["current"];
+	        this.latest = source["latest"];
+	        this.notes = source["notes"];
+	        this.pageUrl = source["pageUrl"];
+	        this.assetName = source["assetName"];
+	    }
+	}
 
 }
 

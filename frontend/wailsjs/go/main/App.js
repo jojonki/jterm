@@ -6,6 +6,14 @@ export function AnswerPrompt(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['AnswerPrompt'](arg1, arg2, arg3, arg4);
 }
 
+export function AppVersion() {
+  return window['go']['main']['App']['AppVersion']();
+}
+
+export function CheckForUpdate() {
+  return window['go']['main']['App']['CheckForUpdate']();
+}
+
 export function Connect(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['Connect'](arg1, arg2, arg3, arg4);
 }
@@ -20,6 +28,10 @@ export function Disconnect(arg1) {
 
 export function DisconnectAll() {
   return window['go']['main']['App']['DisconnectAll']();
+}
+
+export function DownloadUpdate() {
+  return window['go']['main']['App']['DownloadUpdate']();
 }
 
 export function ForgetPassphrase(arg1) {
@@ -44,6 +56,10 @@ export function ListSessions() {
 
 export function LoadImage(arg1) {
   return window['go']['main']['App']['LoadImage'](arg1);
+}
+
+export function OpenReleasePage() {
+  return window['go']['main']['App']['OpenReleasePage']();
 }
 
 export function PickImage() {

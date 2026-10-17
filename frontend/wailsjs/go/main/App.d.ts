@@ -4,6 +4,10 @@ import {main} from '../models';
 
 export function AnswerPrompt(arg1:string,arg2:string,arg3:boolean,arg4:boolean):Promise<void>;
 
+export function AppVersion():Promise<string>;
+
+export function CheckForUpdate():Promise<main.UpdateInfo>;
+
 export function Connect(arg1:string,arg2:string,arg3:number,arg4:number):Promise<void>;
 
 export function DeleteSession(arg1:string):Promise<void>;
@@ -11,6 +15,8 @@ export function DeleteSession(arg1:string):Promise<void>;
 export function Disconnect(arg1:string):Promise<void>;
 
 export function DisconnectAll():Promise<void>;
+
+export function DownloadUpdate():Promise<string>;
 
 export function ForgetPassphrase(arg1:string):Promise<void>;
 
@@ -23,6 +29,8 @@ export function ListKeyFiles():Promise<Array<string>>;
 export function ListSessions():Promise<Array<main.SessionInfo>>;
 
 export function LoadImage(arg1:string):Promise<string>;
+
+export function OpenReleasePage():Promise<void>;
 
 export function PickImage():Promise<string>;
 

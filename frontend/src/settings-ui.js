@@ -1,6 +1,6 @@
 // 外観設定ダイアログとヘルプ(ショートカット一覧・スポンサーリンク)ダイアログ。
 import { BrowserOpenURL } from '../wailsjs/runtime/runtime';
-import { PickImage, PickSSHConfig, ImportSSHConfig } from '../wailsjs/go/main/App';
+import { PickImage, PickSSHConfig, ImportSSHConfig, AppVersion, CheckForUpdate, DownloadUpdate, OpenReleasePage } from '../wailsjs/go/main/App';
 import {
   THEMES, ACCENT_PRESETS, OPACITY_RANGE, LINKS, PRESET_IMAGES, DEFAULT_IMAGE_OPACITY,
   getSettings, getTheme, update, reset, currentColors, onAppearanceChange,
@@ -42,7 +42,10 @@ function colorRow(value, presets, onPick, onClear, clearLabel) {
   return row;
 }
 
-const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
+let APP_VERSION = '';
+AppVersion().then((v) => { APP_VERSION = v; });
+
+let pendingUpdateCheck = false;
 
 export function initSettings({ shortcutRows, activeSession, saveLook }) {
   const dialog = $('#app-dialog');
@@ -277,7 +280,53 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
       links.append(b);
     }
     about.append(links);
+
+    const upd = el('div', 'about-update');
+    const status = el('div', 'hint');
+    const btn = el('button', '', 'Check for Updates');
+    btn.type = 'button';
+    btn.addEventListener('click', () => checkUpdate(status, btn));
+    upd.append(btn, status);
+    about.append(upd);
     hb.append(about);
+    if (pendingUpdateCheck) {
+      pendingUpdateCheck = false;
+      checkUpdate(status, btn);
+    }
+  }
+
+  // 最新リリースを確認し、新しい版があればダウンロードボタンに切り替える
+  async function checkUpdate(status, btn) {
+    btn.disabled = true;
+    status.textContent = 'Checking…';
+    try {
+      const info = await CheckForUpdate();
+      if (!info.available) {
+        status.textContent = `You are up to date (v${info.current}).`;
+        btn.disabled = false;
+        return;
+      }
+      status.textContent = `v${info.latest} is available (you have v${info.current}).`;
+      btn.textContent = info.assetName ? `Download v${info.latest}` : 'Open release page';
+      btn.disabled = false;
+      btn.onclick = async () => {
+        if (!info.assetName) { OpenReleasePage(); return; }
+        btn.disabled = true;
+        status.textContent = 'Downloading…';
+        try {
+          const path = await DownloadUpdate();
+          status.textContent = `Saved to ${path}. Quit jterm and replace it with the new version.`;
+        } catch (e) {
+          status.textContent = `Download failed: ${e}`;
+          btn.textContent = 'Open release page';
+          btn.onclick = () => OpenReleasePage();
+        }
+        btn.disabled = false;
+      };
+    } catch (e) {
+      status.textContent = `Could not check for updates: ${e}`;
+      btn.disabled = false;
+    }
   }
 
   function render() {
@@ -318,7 +367,8 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
     showSessionSettings: () => show('appearance', 'session'),
     showHelp: () => show('shortcuts'),
     showAbout: () => show('about'),
-    version: APP_VERSION,
+    showUpdate: () => { pendingUpdateCheck = true; show('about'); },
+    get version() { return APP_VERSION; },
     themeLabel: () => getTheme().label,
   };
 }
