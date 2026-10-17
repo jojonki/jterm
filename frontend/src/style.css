@@ -92,13 +92,6 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 1px v
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .session-item .sub { color: var(--fg-dim); font-size: 11px; }
-.session-item .badge {
-  font-size: 10px;
-  background: var(--ok);
-  color: #000;
-  border-radius: 8px;
-  padding: 0 6px;
-}
 .session-item mark { background: none; color: #4fc1ff; font-weight: 600; }
 .empty-note { padding: 16px 12px; color: var(--fg-dim); line-height: 1.6; }
 

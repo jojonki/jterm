@@ -87,12 +87,12 @@ function highlight(text, query) {
   return out;
 }
 
-function openCount(sessionId) {
-  let n = 0;
+// findOpenPane は同じセッションを開いている生きたペインを返す。
+function findOpenPane(sessionId) {
   for (const tab of tabs) {
-    for (const p of tab.panes()) if (p.session?.id === sessionId && p.state !== 'closed') n++;
+    for (const p of tab.panes()) if (p.session?.id === sessionId && p.state !== 'closed') return p;
   }
-  return n;
+  return null;
 }
 
 // SessionList はサイドバーとペイン内ピッカーで共用する検索付きリスト。
@@ -113,7 +113,6 @@ class SessionList {
     this.items = filterSessions(q);
     if (this.sel >= this.items.length) this.sel = Math.max(0, this.items.length - 1);
     const children = this.items.map((s, i) => {
-      const n = openCount(s.id);
       return h('div', {
         class: `session-item${i === this.sel ? ' selected' : ''}`,
         title: target(s),
@@ -132,8 +131,7 @@ class SessionList {
       },
       h('div', { class: 'text' },
         h('div', { class: 'name' }, highlight(s.name, q)),
-        h('div', { class: 'sub' }, highlight(target(s), q))),
-      n > 0 ? h('span', { class: 'badge', text: String(n), title: `Open in ${n} pane(s)` }) : null);
+        h('div', { class: 'sub' }, highlight(target(s), q))));
     });
     if (!sessions.length) {
       children.push(h('div', { class: 'empty-note', text: 'No sessions yet. Click “＋ New session” to add one.' }));
@@ -245,7 +243,11 @@ class Pane {
       h('div', {}, h('button', { text: '＋ New session', onclick: () => newSessionInto(this) }))));
     this.picker = new SessionList(input, listEl, {
       singleClick: true,
-      onOpen: (s) => this.connect(s),
+      onOpen: (s) => {
+        const existing = findOpenPane(s.id);
+        if (existing && existing !== this) openSession(s);
+        else this.connect(s);
+      },
     });
     this.picker.render();
     if (preselectId) this.picker.select(preselectId);
@@ -648,7 +650,14 @@ function closePane(pane) {
 }
 
 // openSession は where に応じてセッションを開く。
+// すでに開いているセッションは新規に開かず、そのペインへフォーカスする。
 function openSession(session, where = 'tab') {
+  const existing = findOpenPane(session.id);
+  if (existing) {
+    if (existing.tab !== currentTab) activateTab(existing.tab);
+    setActivePane(existing);
+    return;
+  }
   const pane = activePane();
   if (where === 'tab' || !pane) newTab(session);
   else splitPane(pane, where === 'split-h' ? 'h' : 'v', session);
