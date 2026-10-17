@@ -385,7 +385,7 @@ class Pane {
     if (msg == null) return;
     this.bar = h('div', { class: 'pane-bar' },
       h('span', { class: 'msg', text: msg, title: msg }),
-      h('button', { class: 'primary', text: 'Reconnect (R)', onclick: () => this.reconnect() }),
+      h('button', { class: 'primary', text: `Reconnect (${MOD_LABEL}R)`, onclick: () => this.reconnect() }),
       h('button', { text: 'Close', onclick: () => closePane(this) }));
     this.el.append(this.bar);
   }
@@ -916,6 +916,7 @@ const shortcuts = [
   ['KeyW', 'Close pane', () => activePane() && closePane(activePane())],
   ['KeyD', 'Split right', () => activePane() && splitPane(activePane(), 'h')],
   ['KeyE', 'Split down', () => activePane() && splitPane(activePane(), 'v')],
+  ['KeyR', 'Reconnect', () => { const p = activePane(); if (p?.state === 'closed') p.reconnect(); }],
   ['KeyK', 'Search sessions', () => focusSearch()],
   ['KeyB', 'Toggle sidebar', () => toggleSidebar()],
   ['Comma', 'Appearance settings', () => ui.showSettings()],
