@@ -2,6 +2,8 @@
 
 A simple, focused SSH client for Windows and macOS.
 
+![jterm screenshot](docs/screenshot.png)
+
 - Saved sessions are listed in a sidebar; filter with search and connect
 - One tab per connection, freely split left/right or top/bottom inside a tab
 - Reconnect a disconnected pane with the R key (or the "Reconnect" button)
@@ -70,3 +72,7 @@ The Windows build needs the WebView2 runtime, which is preinstalled on Windows 1
 ## Appearance
 
 The ⚙ button (or ⌘,) opens the appearance settings: color theme, accent color, background color and background opacity. The ? button (or ⌘/) shows the shortcut list and links to the project and to [sponsor jojonki](https://github.com/sponsors/jojonki). Settings are stored locally.
+
+## License
+
+[MIT](LICENSE)
