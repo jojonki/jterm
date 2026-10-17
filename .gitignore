@@ -1,0 +1,4 @@
+jterm
+dist/
+build/bin/
+node_modules/

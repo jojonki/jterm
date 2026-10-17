@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>jterm</title>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-head">
+      <input id="search" type="search" placeholder="Search sessions" autocomplete="off" spellcheck="false">
+    </div>
+    <div id="session-list" class="session-list"></div>
+    <div class="sidebar-foot">
+      <button id="btn-new-session">＋ New session</button>
+      <button id="btn-import-ssh" title="Import Host entries from ~/.ssh/config">Import ~/.ssh/config</button>
+      <div id="import-status" class="hint" hidden></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="tabbar">
+      <button id="btn-toggle-sidebar" class="icon" title="Toggle sidebar">☰</button>
+      <div id="tabs"></div>
+      <button id="btn-new-tab" class="icon" title="New tab">＋</button>
+      <div class="spacer"></div>
+      <button id="btn-split-h" class="icon" title="Split right">◫</button>
+      <button id="btn-split-v" class="icon" title="Split down">⊟</button>
+    </div>
+    <div id="workspace">
+      <div id="welcome">
+        <h1>jterm</h1>
+        <p>Double-click a session in the sidebar to connect.</p>
+        <table id="shortcut-help"></table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="ctxmenu" hidden></div>
+
+<dialog id="session-dialog">
+  <form id="session-form" autocomplete="off">
+    <h2 id="sd-title">New session</h2>
+    <label>Session name
+      <input name="name" placeholder="Defaults to user@host" spellcheck="false">
+    </label>
+    <div class="row">
+      <label class="grow">Host
+        <input name="host" required spellcheck="false">
+      </label>
+      <label class="port">Port
+        <input name="port" type="number" min="1" max="65535" value="22">
+      </label>
+    </div>
+    <label>Username
+      <input name="user" spellcheck="false">
+    </label>
+    <label>Password
+      <input name="password" type="password" autocomplete="new-password">
+    </label>
+    <label class="check" id="sd-clearpw-row">
+      <input type="checkbox" name="clearPassword">
+      Forget the saved password
+    </label>
+    <label>Private key
+      <div class="row">
+        <select name="keyFile" class="grow"></select>
+        <button type="button" id="sd-browse">Browse…</button>
+      </div>
+    </label>
+    <div class="hint">Passwords are stored in the OS credential store (Windows Credential Manager / macOS Keychain).</div>
+    <div id="sd-error" class="error"></div>
+    <div class="buttons">
+      <button type="button" id="sd-cancel">Cancel</button>
+      <button type="submit" value="save">Save</button>
+      <button type="submit" value="connect" class="primary">Save &amp; connect</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="prompt-dialog">
+  <form id="prompt-form" autocomplete="off">
+    <h2 id="pd-title"></h2>
+    <p id="pd-message"></p>
+    <input id="pd-input" spellcheck="false">
+    <label class="check" id="pd-remember-row">
+      <input type="checkbox" id="pd-remember">
+      Remember
+    </label>
+    <div class="buttons">
+      <button type="button" id="pd-cancel">Cancel</button>
+      <button type="submit" id="pd-ok" class="primary">OK</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="./src/main.js" type="module"></script>
+</body>
+</html>
