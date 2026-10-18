@@ -2,13 +2,12 @@
 
 A simple, focused SSH client for Windows and macOS.
 
-![jterm screenshot](docs/screenshot.png)
+![jterm demo](docs/demo.gif)
 
 - Saved sessions are listed in a sidebar; filter with search and connect
 - One tab per connection, freely split left/right or top/bottom inside a tab
-- Reconnect a disconnected pane with the R key (or the "Reconnect" button)
 - Copy on select, paste on right click
-- Per-session look: color theme, accent/background color and a background image (session editor → "Appearance for this session")
+- Per-session look: color theme, accent/background color and a background image (appearance settings → "Session" tab), so you can tell servers apart at a glance
 
 ## Shortcuts
 
@@ -18,14 +17,16 @@ A simple, focused SSH client for Windows and macOS.
 | Close pane | Ctrl+Shift+W | ⌘W |
 | Split left/right | Ctrl+Shift+D | ⌘D |
 | Split top/bottom | Ctrl+Shift+E | ⌘E |
+| Reconnect disconnected pane | Ctrl+Shift+R | ⌘R |
 | Search sessions | Ctrl+Shift+K | ⌘K |
 | Toggle sidebar | Ctrl+Shift+B | ⌘B |
 | Appearance settings | Ctrl+Shift+, | ⌘, |
-| Shortcut help & about | Ctrl+Shift+/ | ⌘/ |
+| Keyboard shortcuts | Ctrl+Shift+/ | ⌘/ |
 | Move between panes | Ctrl+Shift+Arrow | ⌘+Arrow |
 | Switch tab | Ctrl+Tab / Ctrl+Shift+1–9 | Ctrl+Tab / ⌘1–9 |
 | Copy / Paste | Ctrl+Shift+C / V | ⌘C / ⌘V |
 
+- On a disconnected pane, press R or Enter to reconnect as well.
 - Sidebar: double-click to connect in a new tab. Right-click for "Open in split", "Edit", "Duplicate", "Delete".
 - Search box: ↑↓ to select, Enter to open in a new tab, Shift+Enter to open in a split to the right.
 - A newly split pane shows a session picker, with the original pane's session preselected.
@@ -71,7 +72,7 @@ The Windows build needs the WebView2 runtime, which is preinstalled on Windows 1
 
 ## Appearance
 
-The ⚙ button (or ⌘,) opens the appearance settings: color theme, accent color, background color and background opacity. The ? button (or ⌘/) shows the shortcut list and links to the project and to [sponsor jojonki](https://github.com/sponsors/jojonki). Settings are stored locally.
+Open the appearance settings from the Settings menu (or ⌘,): color theme, accent color, background color and background opacity. Switch to the "Session" tab to override the look, and set a background image, for the active pane's session only. The shortcut list is under Settings → Keyboard Shortcuts (⌘/). The Help menu has About, Check for Updates and a link to [sponsor jojonki](https://github.com/sponsors/jojonki). Settings are stored locally.
 
 ## License
 
