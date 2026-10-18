@@ -1,6 +1,10 @@
-# jterm
+<p align="center">
+  <img src="docs/icon.png" width="128" height="128" alt="jterm icon">
+</p>
 
-A simple, focused SSH client for Windows and macOS.
+<h1 align="center">jterm</h1>
+
+<p align="center">A simple, focused SSH client for Windows and macOS.</p>
 
 ![jterm demo](docs/demo.gif)
 
