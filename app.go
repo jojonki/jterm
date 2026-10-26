@@ -90,6 +90,7 @@ func (a *App) startup(ctx context.Context) {
 		}
 	}
 	a.store = st
+	cleanupOldUpdate()
 }
 
 func (a *App) shutdown(context.Context) {

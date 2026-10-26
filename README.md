@@ -78,7 +78,7 @@ The Windows build needs the WebView2 runtime, which is preinstalled on Windows 1
 
 ## Appearance
 
-Open the appearance settings from the Settings menu (or ⌘,): color theme, accent color, background color and background opacity. Switch to the "Session" tab to override the look, and set a background image, for the active pane's session only. The shortcut list is under Settings → Keyboard Shortcuts (⌘/). The Help menu has About, Check for Updates and a link to [sponsor jojonki](https://github.com/sponsors/jojonki). Settings are stored locally.
+Open the appearance settings from the Settings menu (or ⌘,): color theme, accent color, background color and background opacity. Switch to the "Session" tab to override the look, and set a background image, for the active pane's session only. The shortcut list is under Settings → Keyboard Shortcuts (⌘/). The Help menu has About, Check for Updates (downloads the new version, replaces the app and restarts jterm) and a link to [sponsor jojonki](https://github.com/sponsors/jojonki). Settings are stored locally.
 
 ## License
 

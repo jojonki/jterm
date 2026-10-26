@@ -1140,7 +1140,7 @@ async function checkUpdateQuietly() {
       kind: 'confirm',
       title: 'Update available',
       message: `jterm v${info.latest} is available (you have v${info.current}).`,
-      okLabel: 'View',
+      okLabel: 'Update…',
     });
     if (r.ok) ui.showUpdate();
   } catch {

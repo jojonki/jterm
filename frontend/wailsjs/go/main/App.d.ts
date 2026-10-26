@@ -24,6 +24,8 @@ export function ForgetPassword(arg1:string):Promise<void>;
 
 export function ImportSSHConfig(arg1:string):Promise<main.ImportResult>;
 
+export function InstallUpdate():Promise<void>;
+
 export function ListKeyFiles():Promise<Array<string>>;
 
 export function ListSessions():Promise<Array<main.SessionInfo>>;

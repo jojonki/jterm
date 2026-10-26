@@ -46,6 +46,10 @@ export function ImportSSHConfig(arg1) {
   return window['go']['main']['App']['ImportSSHConfig'](arg1);
 }
 
+export function InstallUpdate() {
+  return window['go']['main']['App']['InstallUpdate']();
+}
+
 export function ListKeyFiles() {
   return window['go']['main']['App']['ListKeyFiles']();
 }

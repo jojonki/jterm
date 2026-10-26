@@ -1,6 +1,8 @@
 // 外観設定ダイアログとヘルプ(ショートカット一覧・スポンサーリンク)ダイアログ。
-import { BrowserOpenURL } from '../wailsjs/runtime/runtime';
-import { PickImage, PickSSHConfig, ImportSSHConfig, AppVersion, CheckForUpdate, DownloadUpdate, OpenReleasePage } from '../wailsjs/go/main/App';
+import { BrowserOpenURL, EventsOn } from '../wailsjs/runtime/runtime';
+import {
+  PickImage, PickSSHConfig, ImportSSHConfig, AppVersion, CheckForUpdate, DownloadUpdate, InstallUpdate, OpenReleasePage,
+} from '../wailsjs/go/main/App';
 import {
   THEMES, ACCENT_PRESETS, OPACITY_RANGE, LINKS, PRESET_IMAGES, DEFAULT_IMAGE_OPACITY,
   getSettings, getTheme, update, reset, currentColors, onAppearanceChange,
@@ -295,7 +297,7 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
     }
   }
 
-  // 最新リリースを確認し、新しい版があればダウンロードボタンに切り替える
+  // 最新リリースを確認し、新しい版があれば更新ボタンに切り替える
   async function checkUpdate(status, btn) {
     btn.disabled = true;
     status.textContent = 'Checking…';
@@ -306,27 +308,59 @@ export function initSettings({ shortcutRows, activeSession, saveLook }) {
         btn.disabled = false;
         return;
       }
-      status.textContent = `v${info.latest} is available (you have v${info.current}).`;
-      btn.textContent = info.assetName ? `Download v${info.latest}` : 'Open release page';
-      btn.disabled = false;
-      btn.onclick = async () => {
-        if (!info.assetName) { OpenReleasePage(); return; }
-        btn.disabled = true;
-        status.textContent = 'Downloading…';
-        try {
-          const path = await DownloadUpdate();
-          status.textContent = `Saved to ${path}. Quit jterm and replace it with the new version.`;
-        } catch (e) {
-          status.textContent = `Download failed: ${e}`;
-          btn.textContent = 'Open release page';
-          btn.onclick = () => OpenReleasePage();
-        }
+      if (!info.assetName) {
+        status.textContent = `v${info.latest} is available (you have v${info.current}).`;
+        btn.textContent = 'Open release page';
         btn.disabled = false;
-      };
+        btn.onclick = () => OpenReleasePage();
+        return;
+      }
+      status.textContent = `v${info.latest} is available (you have v${info.current}). jterm will restart, closing open connections.`;
+      btn.textContent = `Update to v${info.latest} and Restart`;
+      btn.disabled = false;
+      btn.onclick = () => installUpdate(info, status, btn);
     } catch (e) {
       status.textContent = `Could not check for updates: ${e}`;
       btn.disabled = false;
     }
+  }
+
+  // 更新を入れて再起動する。置き換えられないときは、ダウンロードだけに切り替える
+  async function installUpdate(info, status, btn) {
+    btn.disabled = true;
+    status.textContent = 'Downloading…';
+    const offs = [
+      EventsOn('update:progress', (pct) => { status.textContent = `Downloading… ${pct}%`; }),
+      EventsOn('update:installing', () => { status.textContent = 'Installing…'; }),
+    ];
+    try {
+      await InstallUpdate();
+      status.textContent = 'Restarting…';
+    } catch (e) {
+      status.textContent = `Could not update automatically: ${e}`;
+      btn.textContent = `Download v${info.latest}`;
+      btn.disabled = false;
+      btn.onclick = () => downloadUpdate(status, btn);
+    } finally {
+      offs.forEach((off) => off());
+    }
+  }
+
+  async function downloadUpdate(status, btn) {
+    btn.disabled = true;
+    status.textContent = 'Downloading…';
+    const off = EventsOn('update:progress', (pct) => { status.textContent = `Downloading… ${pct}%`; });
+    try {
+      const path = await DownloadUpdate();
+      status.textContent = `Saved to ${path}. Quit jterm and replace it with the new version.`;
+    } catch (e) {
+      status.textContent = `Download failed: ${e}`;
+      btn.textContent = 'Open release page';
+      btn.onclick = () => OpenReleasePage();
+    } finally {
+      off();
+    }
+    btn.disabled = false;
   }
 
   function render() {

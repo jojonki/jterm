@@ -18,7 +18,7 @@ import (
 )
 
 // appVersion は現在のバージョン。リリース時に wails.json の productVersion と合わせて更新する。
-const appVersion = "0.1.2"
+const appVersion = "0.1.3"
 
 const latestReleaseAPI = "https://api.github.com/repos/jojonki/jterm/releases/latest"
 
@@ -134,31 +134,40 @@ func (a *App) CheckForUpdate() (UpdateInfo, error) {
 	return info, nil
 }
 
-// DownloadUpdate は最新リリースの配布ファイルをダウンロードフォルダに保存し、開く。
-// macOS では dmg がマウントされ、Windows ではエクスプローラーで zip が選択される。
-// 保存先のパスを返す。
-func (a *App) DownloadUpdate() (string, error) {
-	rel, err := fetchLatest(a.ctx)
+// latestAsset は最新リリースのこの OS 向け配布ファイルの名前と URL を返す。
+func latestAsset(ctx context.Context) (name, url string, err error) {
+	rel, err := fetchLatest(ctx)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	name, url := rel.asset()
+	name, url = rel.asset()
 	if url == "" {
-		return "", fmt.Errorf("no download for this platform in %s", rel.TagName)
+		return "", "", fmt.Errorf("no download for this platform in %s", rel.TagName)
 	}
 	// ファイル名はリリース側の値なので、パス区切りを含んでいても保存先から出ないようにする
-	name = filepath.Base(name)
+	return filepath.Base(name), url, nil
+}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	dir := filepath.Join(home, "Downloads")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
-	}
-	dest := filepath.Join(dir, name)
+// progressWriter は書き込んだ量を数え、1% 進むごとに通知する。
+type progressWriter struct {
+	done, total int64
+	last        int
+	onPercent   func(int)
+}
 
+func (w *progressWriter) Write(p []byte) (int, error) {
+	w.done += int64(len(p))
+	if w.total > 0 {
+		if pct := int(w.done * 100 / w.total); pct != w.last {
+			w.last = pct
+			w.onPercent(pct)
+		}
+	}
+	return len(p), nil
+}
+
+// download は url を dir/name に保存し、そのパスを返す。進み具合は update:progress イベントで知らせる。
+func (a *App) download(url, dir, name string) (string, error) {
 	req, err := http.NewRequestWithContext(a.ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
@@ -174,11 +183,15 @@ func (a *App) DownloadUpdate() (string, error) {
 	}
 
 	// 途中で失敗した不完全なファイルを残さないよう、一時ファイルに書いてから置き換える
+	dest := filepath.Join(dir, name)
 	tmp, err := os.CreateTemp(dir, name+".part-*")
 	if err != nil {
 		return "", err
 	}
-	_, err = io.Copy(tmp, resp.Body)
+	pw := &progressWriter{total: resp.ContentLength, last: -1, onPercent: func(pct int) {
+		runtime.EventsEmit(a.ctx, "update:progress", pct)
+	}}
+	_, err = io.Copy(io.MultiWriter(tmp, pw), resp.Body)
 	if cerr := tmp.Close(); err == nil {
 		err = cerr
 	}
@@ -187,6 +200,57 @@ func (a *App) DownloadUpdate() (string, error) {
 	}
 	if err != nil {
 		os.Remove(tmp.Name())
+		return "", err
+	}
+	return dest, nil
+}
+
+// InstallUpdate は最新リリースをダウンロードして今のアプリと置き換え、jterm を再起動する。
+// dmg の中から起動しているときなど、置き換えられないときはエラーを返す(画面側は DownloadUpdate に切り替える)。
+func (a *App) InstallUpdate() error {
+	name, url, err := latestAsset(a.ctx)
+	if err != nil {
+		return err
+	}
+	dir, err := os.MkdirTemp("", "jterm-update-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	file, err := a.download(url, dir, name)
+	if err != nil {
+		return err
+	}
+	runtime.EventsEmit(a.ctx, "update:installing")
+	relaunch, err := installUpdate(file)
+	if err != nil {
+		return err
+	}
+	if err := relaunch.Start(); err != nil {
+		return fmt.Errorf("updated, but could not restart jterm (please start it again): %w", err)
+	}
+	runtime.Quit(a.ctx)
+	return nil
+}
+
+// DownloadUpdate は最新リリースの配布ファイルをダウンロードフォルダに保存し、開く。
+// macOS では dmg がマウントされ、Windows ではエクスプローラーで zip が選択される。
+// 保存先のパスを返す。
+func (a *App) DownloadUpdate() (string, error) {
+	name, url, err := latestAsset(a.ctx)
+	if err != nil {
+		return "", err
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(home, "Downloads")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	dest, err := a.download(url, dir, name)
+	if err != nil {
 		return "", err
 	}
 
