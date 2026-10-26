@@ -268,6 +268,8 @@ class Pane {
       cursorStyle: 'block',
       cursorInactiveStyle: 'outline',
       allowTransparency: true,
+      // 右クリックはメニューを出すので、単語選択でクリップボードを上書きしない
+      rightClickSelectsWord: false,
       theme: xtermTheme(this.session?.look),
     });
     this.fit = new FitAddon();
@@ -292,10 +294,23 @@ class Pane {
     });
 
     this.termEl = h('div', { style: 'height:100%' });
-    // 右クリックで貼り付け
+    // tmux などがマウスを使っているときはクリックをそちらへ渡し、Shift を押しているときだけ端末側で扱う
+    const appOwnsMouse = (e) => term.modes.mouseTrackingMode !== 'none' && !e.shiftKey;
+    // Shift+右クリック/中クリックがアプリへ送られないよう、xterm より先に止める
+    this.termEl.addEventListener('mousedown', (e) => {
+      if (e.button === 0 || appOwnsMouse(e)) return;
+      if (e.shiftKey) e.stopPropagation();
+      if (e.button === 1) {
+        e.preventDefault(); // Windows の自動スクロールを出さない
+        setActivePane(this);
+        this.paste();
+      }
+    }, true);
     this.termEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      this.paste();
+      if (appOwnsMouse(e)) return;
+      setActivePane(this);
+      termMenu(this, e.clientX, e.clientY);
     });
     this.term = term;
     new ResizeObserver(() => this.refit()).observe(this.body);
@@ -326,7 +341,10 @@ class Pane {
     this.applyLook();
     this.ensureTerm();
     this.body.replaceChildren(this.termEl);
-    if (!this.term.element) this.term.open(this.termEl);
+    if (!this.term.element) {
+      this.term.open(this.termEl);
+      forceSelectionWithShift(this.term);
+    }
     this.refit();
     this.start();
     this.focus();
@@ -421,12 +439,30 @@ class Pane {
     if (text) ClipboardSetText(text);
   }
 
+  selectAll() {
+    this.term?.selectAll();
+  }
+
+  // clear は表示とスクロールバックを消す(プロンプト行は残る)
+  clear() {
+    this.term?.clear();
+  }
+
   update() {
     this.titleEl.textContent = this.session ? `${this.session.name}  (${target(this.session)})` : 'Select a session';
     this.dotEl.className = `dot ${this.state}`;
     this.tab.renderTitle();
     sidebarList?.render();
   }
+}
+
+// forceSelectionWithShift は、tmux などがマウスを使っていても Shift+ドラッグで選択できるようにする。
+// xterm.js は macOS では Option でしか強制選択できないため、内部の判定を差し替える。
+function forceSelectionWithShift(term) {
+  const sel = term._core?._selectionService;
+  if (!isMac || typeof sel?.shouldForceSelection !== 'function') return;
+  const orig = sel.shouldForceSelection.bind(sel);
+  sel.shouldForceSelection = (e) => e.shiftKey || orig(e);
 }
 
 // ---------------------------------------------------------------------------
@@ -854,10 +890,9 @@ function showMenu(items, x, y) {
   menu.replaceChildren(...items.map((it) => (it === '-'
     ? h('hr')
     : h('div', {
-      class: `item${it.danger ? ' danger' : ''}`,
-      text: it.label,
-      onclick: () => { hideMenu(); it.action(); },
-    }))));
+      class: `item${it.danger ? ' danger' : ''}${it.disabled ? ' disabled' : ''}`,
+      onclick: () => { if (it.disabled) return; hideMenu(); it.action(); },
+    }, h('span', { text: it.label }), it.key && h('span', { class: 'key', text: it.key })))));
   menu.hidden = false;
   const mw = menu.offsetWidth;
   const mh = menu.offsetHeight;
@@ -873,6 +908,8 @@ window.addEventListener('mousedown', (e) => {
   if (!$('#ctxmenu').contains(e.target)) hideMenu();
 }, true);
 window.addEventListener('blur', hideMenu);
+// メニューを押しても端末からフォーカスを奪わない
+$('#ctxmenu').addEventListener('mousedown', (e) => e.preventDefault());
 
 function sessionMenu(s, x, y) {
   const hasPane = !!activePane();
@@ -905,6 +942,23 @@ function sessionMenu(s, x, y) {
         }
       },
     },
+  ].filter(Boolean), x, y);
+}
+
+function termMenu(pane, x, y) {
+  const term = pane.term;
+  const multi = pane.tab.panes().length > 1;
+  showMenu([
+    { label: 'Copy', key: `${MOD_LABEL}C`, disabled: !term.hasSelection(), action: () => pane.copy() },
+    { label: 'Paste', key: `${MOD_LABEL}V`, disabled: pane.state !== 'connected', action: () => pane.paste() },
+    { label: 'Select All', action: () => pane.selectAll() },
+    { label: 'Clear Scrollback', action: () => pane.clear() },
+    '-',
+    { label: 'Split Right', key: `${MOD_LABEL}D`, action: () => splitPane(pane, 'h') },
+    { label: 'Split Down', key: `${MOD_LABEL}E`, action: () => splitPane(pane, 'v') },
+    pane.state === 'closed' && { label: 'Reconnect', key: `${MOD_LABEL}R`, action: () => pane.reconnect() },
+    '-',
+    { label: multi ? 'Close Pane' : 'Close Tab', key: `${MOD_LABEL}W`, danger: true, action: () => closePane(pane) },
   ].filter(Boolean), x, y);
 }
 
@@ -975,7 +1029,11 @@ document.addEventListener('keydown', (e) => {
   const inField = e.target.matches?.('input, textarea:not(.xterm-helper-textarea)');
   if (inField && ['KeyA', 'KeyC', 'KeyV', 'KeyX'].includes(e.code)) return;
   let action = null;
-  if (e.ctrlKey && e.code === 'Tab') {
+  const plain = !e.altKey && !e.metaKey;
+  if (!inField && plain && e.code === 'Insert' && e.shiftKey !== e.ctrlKey) {
+    // 一般的な端末と同じく Shift+Insert で貼り付け、Ctrl+Insert でコピー
+    action = e.shiftKey ? () => activePane()?.paste() : () => activePane()?.copy();
+  } else if (e.ctrlKey && e.code === 'Tab') {
     action = () => cycleTab(e.shiftKey ? -1 : 1);
   } else if (isMod(e) || isMacOptionAlias(e)) {
     const sc = shortcuts.find(([code]) => code === e.code);
@@ -1009,7 +1067,11 @@ function shortcutRows() {
     ...shortcuts.filter(([code]) => !code.startsWith('Arrow')).map(([code, label]) => [`${MOD_LABEL}${KEY_LABELS[code] ?? code.slice(3)}`, label]),
     [`${MOD_LABEL}←↑↓→`, 'Move between panes'],
     ['Ctrl+Tab', 'Next tab'],
-    ['Select text / right-click in terminal', 'Copy / paste'],
+    ['Select text in terminal', 'Copy'],
+    ['Right-click in terminal', 'Copy / paste / split menu'],
+    ['Middle-click / Shift+Insert', 'Paste'],
+    ['Ctrl+Insert', 'Copy'],
+    ['Shift+drag / Shift+right-click', 'Select / menu even when tmux etc. uses the mouse'],
   ];
 }
 

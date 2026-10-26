@@ -31,6 +31,8 @@
 | Copy / Paste | Ctrl+Shift+C / V | ⌘C / ⌘V |
 
 - On a disconnected pane, press R or Enter to reconnect as well.
+- Terminal: selecting text copies it. Right-click for Copy / Paste / Select All / Clear Scrollback / Split / Close. Middle-click or Shift+Insert pastes, Ctrl+Insert copies.
+- When an app such as tmux or vim has mouse mode on, clicks go to that app. Hold Shift to select text, open the menu, or paste with middle-click anyway.
 - Sidebar: double-click to connect in a new tab. Right-click for "Open in split", "Edit", "Duplicate", "Delete".
 - Search box: ↑↓ to select, Enter to open in a new tab, Shift+Enter to open in a split to the right.
 - A newly split pane shows a session picker, with the original pane's session preselected.

@@ -260,9 +260,12 @@ kbd {
   border-radius: 4px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
 }
-#ctxmenu .item { padding: 5px 20px; cursor: default; }
+#ctxmenu .item { display: flex; gap: 24px; justify-content: space-between; padding: 5px 20px; cursor: default; }
 #ctxmenu .item:hover { background: var(--bg-select); }
 #ctxmenu .item.danger { color: var(--err); }
+#ctxmenu .item.disabled { color: var(--fg-dim); opacity: .6; }
+#ctxmenu .item.disabled:hover { background: none; }
+#ctxmenu .item .key { color: var(--fg-dim); }
 #ctxmenu hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
 /* ---- ダイアログ ---- */
