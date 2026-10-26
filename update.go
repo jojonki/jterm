@@ -18,7 +18,7 @@ import (
 )
 
 // appVersion は現在のバージョン。リリース時に wails.json の productVersion と合わせて更新する。
-const appVersion = "0.1.3"
+const appVersion = "0.1.4"
 
 const latestReleaseAPI = "https://api.github.com/repos/jojonki/jterm/releases/latest"
 
