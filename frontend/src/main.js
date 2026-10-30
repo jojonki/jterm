@@ -49,6 +49,7 @@ function b64ToBytes(b64) {
 let sessions = [];
 
 function target(s) {
+  if (s.local) return s.shell || 'local shell';
   let t = s.host;
   if (s.user) t = `${s.user}@${t}`;
   if (s.port && s.port !== 22) t += `:${s.port}`;
@@ -784,6 +785,15 @@ function editSession(session) {
   const isNew = !session?.id;
   $('#sd-title').textContent = isNew ? 'New session' : 'Edit session';
   form.name.value = session?.name ?? '';
+  form.local.checked = !!session?.local;
+  form.shell.value = session?.shell ?? '';
+  const syncLocal = () => {
+    $('#sd-local').hidden = !form.local.checked;
+    $('#sd-ssh').hidden = form.local.checked;
+    form.host.required = !form.local.checked;
+  };
+  form.local.addEventListener('change', syncLocal);
+  syncLocal();
   form.host.value = session?.host ?? '';
   form.port.value = session?.port || 22;
   form.user.value = session?.user ?? '';
@@ -794,11 +804,12 @@ function editSession(session) {
   fillKeySelect(session?.keyFile ?? '');
   err.textContent = '';
   dlg.showModal();
-  focusSoon(isNew && !session?.host ? form.host : form.name);
+  focusSoon(isNew && !session?.host && !session?.local ? form.host : form.name);
 
   return new Promise((resolve) => {
     const cleanup = () => {
       form.removeEventListener('submit', onSubmit);
+      form.local.removeEventListener('change', syncLocal);
       $('#sd-cancel').removeEventListener('click', onCancel);
       dlg.removeEventListener('cancel', onCancel);
     };
@@ -814,6 +825,8 @@ function editSession(session) {
         const saved = await Backend.SaveSession({
           id: isNew ? '' : session.id,
           name: form.name.value,
+          local: form.local.checked,
+          shell: form.shell.value,
           host: form.host.value,
           port: Number(form.port.value) || 22,
           user: form.user.value,

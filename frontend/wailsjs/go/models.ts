@@ -44,6 +44,8 @@ export namespace main {
 	    user: string;
 	    keyFile: string;
 	    hasPassword: boolean;
+	    local: boolean;
+	    shell: string;
 	    lastUsed: number;
 	    look?: Look;
 	    password: string;
@@ -62,6 +64,8 @@ export namespace main {
 	        this.user = source["user"];
 	        this.keyFile = source["keyFile"];
 	        this.hasPassword = source["hasPassword"];
+	        this.local = source["local"];
+	        this.shell = source["shell"];
 	        this.lastUsed = source["lastUsed"];
 	        this.look = this.convertValues(source["look"], Look);
 	        this.password = source["password"];

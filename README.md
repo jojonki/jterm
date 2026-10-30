@@ -38,6 +38,10 @@
 - A newly split pane shows a session picker, with the original pane's session preselected.
 - Drag a divider to resize, drag a tab to reorder, middle-click a tab to close it.
 
+## Local shell
+
+Check "Local shell (no SSH)" in the session editor to open a shell on your own machine instead of connecting over SSH. The command defaults to `$SHELL` (started as a login shell); set "Command" to run something else. Supported on macOS and Linux; not yet on Windows.
+
 ## Authentication
 
 1. Public key: the private key specified in the session. If none is specified, `~/.ssh/id_ed25519`, `id_ecdsa` and `id_rsa` are tried in that order. Passphrase-protected keys are supported.

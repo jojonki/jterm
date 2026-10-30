@@ -26,6 +26,8 @@ type SessionInfo struct {
 	User        string `json:"user"`
 	KeyFile     string `json:"keyFile"`
 	HasPassword bool   `json:"hasPassword"`
+	Local       bool   `json:"local"`    // SSH ではなくローカルのシェルを起動する
+	Shell       string `json:"shell"`    // ローカルで起動するコマンド。空なら $SHELL
 	LastUsed    int64  `json:"lastUsed"` // UNIX ミリ秒。未使用なら 0
 	Look        *Look  `json:"look"`
 
@@ -37,7 +39,7 @@ type SessionInfo struct {
 func toInfo(s *Session) SessionInfo {
 	info := SessionInfo{
 		ID: s.ID, Name: s.Name, Host: s.Host, Port: s.Port, User: s.User,
-		KeyFile: s.KeyFile, HasPassword: s.HasPassword, Look: s.Look,
+		KeyFile: s.KeyFile, HasPassword: s.HasPassword, Local: s.Local, Shell: s.Shell, Look: s.Look,
 	}
 	if !s.LastUsed.IsZero() {
 		info.LastUsed = s.LastUsed.UnixMilli()
@@ -63,8 +65,8 @@ type conn struct {
 
 	mu         sync.Mutex
 	client     *ssh.Client
-	sess       *ssh.Session
 	stdin      io.WriteCloser
+	resize     func(cols, rows int)
 	cols, rows int
 }
 
@@ -124,19 +126,29 @@ func (a *App) SaveSession(in SessionInfo) (SessionInfo, error) {
 	in.User = strings.TrimSpace(in.User)
 	in.Name = strings.TrimSpace(in.Name)
 	in.KeyFile = strings.TrimSpace(in.KeyFile)
-	if in.Host == "" {
-		return SessionInfo{}, errors.New("Host is required")
-	}
-	if in.Port == 0 {
-		in.Port = 22
-	}
-	if in.Port < 1 || in.Port > 65535 {
-		return SessionInfo{}, errors.New("Port must be between 1 and 65535")
-	}
-	if in.Name == "" {
-		in.Name = in.Host
-		if in.User != "" {
-			in.Name = in.User + "@" + in.Host
+	in.Shell = strings.TrimSpace(in.Shell)
+	if in.Local {
+		in.Host, in.User, in.KeyFile, in.Port = "", "", "", 0
+		in.Password, in.ClearPassword = "", false
+		if in.Name == "" {
+			in.Name = "Local shell"
+		}
+	} else {
+		in.Shell = ""
+		if in.Host == "" {
+			return SessionInfo{}, errors.New("Host is required")
+		}
+		if in.Port == 0 {
+			in.Port = 22
+		}
+		if in.Port < 1 || in.Port > 65535 {
+			return SessionInfo{}, errors.New("Port must be between 1 and 65535")
+		}
+		if in.Name == "" {
+			in.Name = in.Host
+			if in.User != "" {
+				in.Name = in.User + "@" + in.Host
+			}
 		}
 	}
 
@@ -148,6 +160,7 @@ func (a *App) SaveSession(in SessionInfo) (SessionInfo, error) {
 		a.store.Sessions = append(a.store.Sessions, s)
 	}
 	s.Name, s.Host, s.Port, s.User, s.KeyFile = in.Name, in.Host, in.Port, in.User, in.KeyFile
+	s.Local, s.Shell = in.Local, in.Shell
 	if in.Look.empty() {
 		s.Look = nil
 	} else {
@@ -336,20 +349,27 @@ func (a *App) run(c *conn, s Session) {
 	}()
 
 	a.emitStatus(c.id, "connecting", "")
-	res, err := dialSession(c.ctx, s, &connPrompter{a: a, c: c, title: s.Name})
-	if err != nil {
-		if c.ctx.Err() != nil {
-			err = errCanceled
+	var (
+		client   *ssh.Client
+		remember string
+	)
+	if !s.Local {
+		res, err := dialSession(c.ctx, s, &connPrompter{a: a, c: c, title: s.Name})
+		if err != nil {
+			if c.ctx.Err() != nil {
+				err = errCanceled
+			}
+			a.emitStatus(c.id, "closed", err.Error())
+			return
 		}
-		a.emitStatus(c.id, "closed", err.Error())
-		return
+		client, remember = res.client, res.passwordToRemember
 	}
 
 	a.mu.Lock()
 	if st := a.store.get(s.ID); st != nil {
 		st.LastUsed = time.Now()
-		if res.passwordToRemember != "" {
-			if err := setSecret(st.ID, res.passwordToRemember); err == nil {
+		if remember != "" {
+			if err := setSecret(st.ID, remember); err == nil {
 				st.HasPassword = true
 			} else {
 				a.emitText(c.id, "\x1b[33mWarning: failed to save password: "+err.Error()+"\x1b[0m\n")
@@ -360,7 +380,12 @@ func (a *App) run(c *conn, s Session) {
 	}
 	a.mu.Unlock()
 
-	err = a.shell(c, res.client)
+	var err error
+	if s.Local {
+		err = a.localShell(c, s.Shell)
+	} else {
+		err = a.shell(c, client)
+	}
 	msg := ""
 	if err != nil {
 		msg = err.Error()
@@ -384,7 +409,8 @@ func (a *App) shell(c *conn, client *ssh.Client) error {
 	}
 
 	c.mu.Lock()
-	c.client, c.sess, c.stdin = client, sess, stdin
+	c.client, c.stdin = client, stdin
+	c.resize = func(cols, rows int) { sess.WindowChange(rows, cols) }
 	cols, rows := c.cols, c.rows
 	c.mu.Unlock()
 	if c.ctx.Err() != nil {
@@ -475,10 +501,10 @@ func (a *App) Resize(connID string, cols, rows int) {
 	}
 	c.mu.Lock()
 	c.cols, c.rows = cols, rows
-	sess := c.sess
+	resize := c.resize
 	c.mu.Unlock()
-	if sess != nil {
-		sess.WindowChange(rows, cols)
+	if resize != nil {
+		resize(cols, rows)
 	}
 }
 

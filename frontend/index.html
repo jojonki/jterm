@@ -42,6 +42,16 @@
     <label>Session name
       <input name="name" placeholder="Defaults to user@host" spellcheck="false">
     </label>
+    <label class="check">
+      <input type="checkbox" name="local">
+      Local shell (no SSH)
+    </label>
+    <div id="sd-local">
+      <label>Command
+        <input name="shell" placeholder="Defaults to $SHELL" spellcheck="false">
+      </label>
+    </div>
+    <div id="sd-ssh">
     <div class="row">
       <label class="grow">Host
         <input name="host" required spellcheck="false">
@@ -66,6 +76,7 @@
         <button type="button" id="sd-browse">Browse…</button>
       </div>
     </label>
+    </div>
     <div class="hint">Passwords are stored in the OS credential store (Windows Credential Manager / macOS Keychain).</div>
     <div id="sd-error" class="error"></div>
     <div class="buttons">

@@ -31,6 +31,8 @@ type Session struct {
 	User        string    `json:"user"`
 	KeyFile     string    `json:"keyFile,omitempty"`
 	HasPassword bool      `json:"hasPassword,omitempty"` // パスワード本体は secrets.go で OS に保存
+	Local       bool      `json:"local,omitempty"`       // true ならローカルのシェルを起動する(SSH しない)
+	Shell       string    `json:"shell,omitempty"`       // ローカルで起動するコマンド。空なら $SHELL
 	LastUsed    time.Time `json:"lastUsed,omitempty"`
 	Look        *Look     `json:"look,omitempty"`
 }
